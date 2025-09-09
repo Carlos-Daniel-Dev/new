@@ -29,10 +29,41 @@ function pararAudio() {
 async function monitorar() {
     console.log('🚀 Iniciando monitoramento...');
     
-    const browser = await puppeteer.launch({
-        headless: false,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    // 🍓 Caminhos do Chromium no Raspberry Pi
+    const chromiumPaths = [
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium',
+        '/snap/bin/chromium',
+        'chromium-browser',
+        'chromium'
+    ];
+    
+    let browser;
+    
+    for (const path of chromiumPaths) {
+        try {
+            console.log(`Tentando Chromium em: ${path}`);
+            browser = await puppeteer.launch({
+                executablePath: path,  // 🔧 REMOVE o 'product: firefox'
+                headless: false,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',  // Para Raspberry Pi
+                    '--disable-gpu'  // Melhora performance no Pi
+                ]
+            });
+            console.log(`✅ Chromium iniciado com sucesso em: ${path}`);
+            break;
+        } catch (err) {
+            console.log(`❌ Falhou em: ${path} - ${err.message}`);
+            continue;
+        }
+    }
+    
+    if (!browser) {
+        throw new Error('🚫 Não foi possível encontrar o Chromium em nenhum caminho comum');
+    }
     
     const page = await browser.newPage();
     
@@ -107,7 +138,7 @@ async function monitorar() {
     }
 }
 
-console.log('🚀 Iniciando monitoramento de PING...');
+console.log('🍓 Iniciando monitoramento de PING no Raspberry Pi com Chromium...');
 console.log('📊 Configurações:');
 console.log('   🟢 < 40ms: Ping BOM');
 console.log('   🟡 40-65ms: Ping ACEITÁVEL'); 
